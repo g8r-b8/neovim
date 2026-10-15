@@ -253,8 +253,10 @@ CTRL-M or CTRL-J		*c_CTRL-M* *c_CTRL-J* *c_<NL>* *c_<CR>* *c_CR*
 
 CTRL-[						*c_CTRL-[* *c_<Esc>* *c_Esc*
 <Esc>		When typed and 'x' not present in 'cpoptions', quit
-		Command-line mode without executing.  In macros or when 'x'
-		present in 'cpoptions', start entered command.
+		Command-line mode without executing.  When not typed (from a
+		mapping, macro, |:normal| or |feedkeys()| without "t") or when
+		'x' present in 'cpoptions', start entered command.  Use
+		CTRL-C in a mapping to abandon the command-line.
 		Note: If your <Esc> key is hard to hit on your keyboard, train
 		yourself to use CTRL-[.
 						*c_META* *c_ALT*
