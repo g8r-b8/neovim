@@ -1728,6 +1728,59 @@ describe('ColorColumn highlight', function()
                                               |
     ]])
   end)
+
+  it('is drawn above line highlights #28118', function()
+    screen:try_resize(30, 6)
+    command('hi ColorColumn guibg=Blue')
+    command('hi DiffChange guibg=Red')
+    exec([[
+      call setline(1, ['aaaa', 'bbbb'])
+      vnew
+      call setline(1, ['aaaa', 'bbbc'])
+      windo diffthis
+      windo set colorcolumn=3,7 nofoldenable
+    ]])
+    screen:add_extra_attr_ids { [103] = { background = Screen.colors.Blue } }
+    -- ColorColumn is above DiffChange both in the text and after end-of-line.
+    screen:expect([[
+      {7:  }aa{103:a}a  {103: }│{7:  }^aa{103:a}a  {103: }           |
+      {7:  }{30:bb}{103:b}{27:c}{30:  }{103: }│{7:  }{30:bb}{103:b}{27:b}{30:  }{103: }{30:           }|
+      {1:~        }│{1:~                   }|*2
+      {2:<me] [+]  }{3:[No Name] [+]       }|
+                                    |
+    ]])
+  end)
+
+  it('is drawn above line highlights but below syntax #28118', function()
+    screen:try_resize(30, 5)
+    command('hi ColorColumn guibg=Blue')
+    command('hi CursorColumn guibg=Green')
+    command('hi Error guifg=Red guibg=Yellow')
+    command('hi LineHl guibg=Grey')
+    exec([[
+      call setline(1, ['xxxx', 'xxxx', 'xxxx'])
+      syntax match Error /x/
+      set colorcolumn=2,7 cursorcolumn
+      call cursor(3, 3)
+    ]])
+    api.nvim_buf_set_extmark(0, api.nvim_create_namespace(''), 1, 0, { line_hl_group = 'LineHl' })
+    screen:add_extra_attr_ids {
+      [103] = { background = Screen.colors.Blue },
+      [104] = { background = Screen.colors.Grey, foreground = Screen.colors.Red1 },
+      [105] = { background = Screen.colors.Blue, foreground = Screen.colors.Red1 },
+      [106] = { background = Screen.colors.Green, foreground = Screen.colors.Red1 },
+    }
+    -- Without a line highlight, syntax hides ColorColumn and CursorColumn (#6380).
+    -- With one, the line highlight hides syntax background and the columns are
+    -- drawn above it.
+    screen:expect([[
+      {20:xxxx}  {103: }                       |
+      {104:x}{105:x}{106:x}{104:x}{12:  }{103: }{12:                       }|
+      {20:xx^xx}  {103: }                       |
+      {1:~                             }|
+                                    |
+    ]])
+  end)
 end)
 
 describe('MsgSeparator highlight and msgsep fillchar', function()

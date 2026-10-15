@@ -661,7 +661,8 @@ Functions:
 
 Highlight groups:
 - |hl-ColorColumn|, |hl-CursorColumn| are lower priority than most other
-  groups
+  groups, but are drawn above whole-line highlights (|hl-DiffChange|,
+  |hl-QuickFixLine|, sign "linehl", etc.)
 - |hl-CursorLine| is low-priority unless foreground color is set
 - |hl-VertSplit| superseded by |hl-WinSeparator|
 - Highlight groups names are allowed to contain `@` characters.

@@ -2922,19 +2922,25 @@ int win_line(win_T *wp, linenr_T lnum, int startrow, int endrow, int col_rows, b
           advance_color_col(&wlv, vcol_hlc(wlv));
 
           int col_attr = base_attr;
+          int vcol_attr = 0;
 
           if (wp->w_p_cuc && vcol_hlc(wlv) == wp->w_virtcol
               && lnum != wp->w_cursor.lnum) {
-            col_attr = hl_combine_attr(col_attr, cuc_attr);
+            vcol_attr = cuc_attr;
           } else if (wlv.color_cols && vcol_hlc(wlv) == *wlv.color_cols) {
-            col_attr = hl_combine_attr(col_attr, mc_attr);
+            vcol_attr = mc_attr;
           }
+          col_attr = hl_combine_attr(col_attr, vcol_attr);
 
           if (wp->w_buffer->terminal && wlv.vcol < TERM_ATTRS_MAX) {
             col_attr = hl_combine_attr(col_attr, term_attrs[wlv.vcol]);
           }
 
+          // Same order as in the text: the column goes above the line highlight.
           col_attr = hl_combine_attr(col_attr, wlv.line_attr);
+          if (wlv.line_attr != 0) {
+            col_attr = hl_combine_attr(col_attr, vcol_attr);
+          }
 
           linebuf_attr[wlv.off] = col_attr;
           // linebuf_vcol[] already filled by the for loop above
@@ -3001,13 +3007,20 @@ int win_line(win_T *wp, linenr_T lnum, int startrow, int endrow, int col_rows, b
         && search_attr == 0
         && area_attr == 0
         && wlv.filler_todo <= 0) {
+      int vcol_attr = -1;
       if (wp->w_p_cuc && vcol_hlc(wlv) == wp->w_virtcol
           && lnum != wp->w_cursor.lnum) {
-        vcol_save_attr = wlv.char_attr;
-        wlv.char_attr = hl_combine_attr(win_hl_attr(wp, HLF_CUC), wlv.char_attr);
+        vcol_attr = win_hl_attr(wp, HLF_CUC);
       } else if (wlv.color_cols && vcol_hlc(wlv) == *wlv.color_cols) {
+        vcol_attr = win_hl_attr(wp, HLF_MC);
+      }
+      if (vcol_attr >= 0) {
         vcol_save_attr = wlv.char_attr;
-        wlv.char_attr = hl_combine_attr(win_hl_attr(wp, HLF_MC), wlv.char_attr);
+        // The column goes right above the line highlight: below character
+        // highlights, unless the line highlight itself overrides them.
+        wlv.char_attr = wlv.line_attr != 0
+                        ? hl_combine_attr(wlv.char_attr, vcol_attr)
+                        : hl_combine_attr(vcol_attr, wlv.char_attr);
       }
     }
 
